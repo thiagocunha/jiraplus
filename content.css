@@ -1,0 +1,17 @@
+canvas {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
+.chart-container {
+    width: 100%;
+    margin-left: 1px;
+    margin-right: 1px;
+    margin-bottom: 1px;
+}
+.container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+}

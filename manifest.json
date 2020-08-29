@@ -1,0 +1,28 @@
+{
+  "manifest_version": 2,
+  "name": "Jira plus",
+  "description": "This extension will add some improvements to our Jira boards.",
+  "version": "1",
+  "browser_action": {
+    "default_title": "JiraPlus",
+    "default_icon": "img/jira128.png"
+  },
+  "icons": {
+    "128": "img/jira128.png",
+    "512": "img/jira.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://jiracloud.cit.com.br/secure/*", "https://jiracloud.cit.com.br/browse/*"],
+      "css": ["content.css"],
+      "js": ["util/Chart.min.js","util/jquery.min.js",  "content.js", "util/util.js"]
+    }
+  ],
+   "permissions": [
+    "tabs",
+    "*://*/*"
+  ],
+   "web_accessible_resources": [
+    "content.css"
+  ]
+}
