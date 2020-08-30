@@ -15,3 +15,14 @@ canvas {
     flex-wrap: wrap;
     justify-content: center;
 }
+.tticon{
+    width: 16px;
+    height: 16px;
+    background-image: '../img/compass.svg';
+}
+.calendaricon{
+    width: 16px;
+    height: 16px;
+    background-image: '../img/calendar.svg';
+
+}
