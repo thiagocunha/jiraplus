@@ -19,8 +19,7 @@
     }
   ],
    "permissions": [
-    "tabs",
-    "*://*/*"
+    "activeTab"
   ],
    "web_accessible_resources": [
     "content.css"
