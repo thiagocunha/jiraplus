@@ -417,12 +417,14 @@ function optimizeUI(){
 
     
 
-    updateTicket($('.ghx-swimlane-header:not(".updatedTicked"):first'), 1);
+    updateTicket($('.ghx-swimlane-header[data-swimlane-id=1]'), 1);
 }
 
 function updateTicket(ticketElement, index){
     var issue = $(ticketElement).attr('data-issue-id');
 
+    console.log("Ticket id: " + issue);
+    console.log("Key: "+ $(ticketElement).attr('data-issue-key'));
     if (issue && !$(ticketElement).hasClass("updatedTicket")){
         $(ticketElement).addClass('updatedTicket');
 
@@ -520,14 +522,15 @@ function updateTicket(ticketElement, index){
 }
 
 function checkNextItem(index){
-    var elements = $('.ghx-swimlane-header:not(".updatedTicket")');
-    if (elements.length > index + 1){
+    index = index + 1;
+    var elements = $('.ghx-swimlane-header[data-swimlane-id='+(index)+']');
+    if (elements.length == 1){
         // recursive call for each list item
-        setTimeout(function(){updateTicket(elements[index], index + 1);}, 10);
+        setTimeout(function(){updateTicket(elements[0], index);}, 10);
     }
-    else if (index<=1){
+    else if (elements.length == 0){
         // try to start again after 30 seconds if the list wasn't ready
-        setTimeout(optimizeUI, 2000);
+        setTimeout(optimizeUI, 5000);
     }
     else{
         statusPlus = 2;
