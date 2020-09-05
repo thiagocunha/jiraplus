@@ -18,8 +18,15 @@
       "js": ["util/Chart.min.js","util/jquery.min.js",  "content.js", "util/util.js"]
     }
   ],
+  "background": {
+    "scripts": ["bg.js"],
+    "persistent": true
+  },
    "permissions": [
-    "activeTab"
+     "tabs",
+    "activeTab",
+    "webRequest",
+    "*://*.cit.com.br/"
   ],
    "web_accessible_resources": [
     "content.css"
