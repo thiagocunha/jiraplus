@@ -423,10 +423,11 @@ function optimizeUI(){
 function updateTicket(ticketElement, index){
     var issue = $(ticketElement).attr('data-issue-id');
 
-    console.log("Ticket id: " + issue);
+    //console.log("Ticket id: " + issue);
     console.log("Key: "+ $(ticketElement).attr('data-issue-key'));
-    if (issue && !$(ticketElement).hasClass("updatedTicket")){
-        $(ticketElement).addClass('updatedTicket');
+    if (issue && $(ticketElement).children('.updatedTicket').length==0){
+        console.log('Not updated yet');
+        $(ticketElement).children('div').addClass('updatedTicket');
 
         $.ajax({
             url: 'https://jiracloud.cit.com.br/rest/api/2/issue/'+issue,
@@ -458,7 +459,7 @@ function updateTicket(ticketElement, index){
                     detailText = 'To describe';
                 }
         
-                return text.replace(/Product backlog/gi, detailText);
+                return text.replace(/(Product backlog|In business analysis)/gi, detailText);
             });
         
             if (data.fields.assignee && data.fields.assignee.avatarUrls && $(ticketElement).children('div .updatedItem').length == 0){
@@ -483,8 +484,8 @@ function updateTicket(ticketElement, index){
             // Status <> backlog
             if (data.fields.status.id != 10354){                
 
-                // Status ready, in dev or in test, in qa
-                if (data.fields.status.id == 10012 || data.fields.status.id == 10013 || data.fields.status.id == 11656 || data.fields.status.id == 10027){
+                // Status ready, in dev or in test, in qa, in business detailing
+                if (data.fields.status.id == 10012 || data.fields.status.id == 10013 || data.fields.status.id == 11656 || data.fields.status.id == 10027 || data.fields.status.id == 11152){
                     var hasTest = false;
                     for (var i=0;i<data.fields.subtasks.length;i++){
                         if (data.fields.subtasks[i].fields.issuetype.id == 33 ){
@@ -493,7 +494,7 @@ function updateTicket(ticketElement, index){
                         }
                     }
 
-                    if (!hasTest && !(data.fields.issuetype.name == "Incident" || data.fields.issuetype.name == "Bug")){
+                    if (!hasTest && !(data.fields.issuetype.name == "Incident" || data.fields.issuetype.name == "Bug") && !(detailText == "To detail")){
                         $(ticketElement).children('div').append('<span style="color: red">&nbsp;Missing test activites</span>');
                     }
 
@@ -525,17 +526,20 @@ function checkNextItem(index){
     index = index + 1;
     var elements = $('.ghx-swimlane-header[data-swimlane-id='+(index)+']');
     if (elements.length == 1){
+        statusPlus = 1;
         // recursive call for each list item
         setTimeout(function(){updateTicket(elements[0], index);}, 10);
     }
-    else if (elements.length == 0){
-        // try to start again after 30 seconds if the list wasn't ready
-        setTimeout(optimizeUI, 5000);
+    else if (statusPlus == 0){ // If it hasn't started yet
+        // try to start again after 1 seconds if the list wasn't ready
+        setTimeout(optimizeUI, 1000);
     }
     else{
         statusPlus = 2;
         console.log('Finished checking list');
     }
+    
+    
 }
 
 // DEPRECATED
@@ -581,7 +585,6 @@ function monitorNetwork(){
 }
 
 $(document).ready(function(){
-    statusPlus = 1;
     insertBurnDownDOM();
     setTimeout(optimizeUI, 1000);
     setTimeout(monitorNetwork, 3300);
