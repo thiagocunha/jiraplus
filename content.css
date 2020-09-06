@@ -31,3 +31,22 @@ canvas {
     margin-top: 2px !important;
     margin-bottom: 2px !important;
 }
+.ballparkGraph{
+    float: left;
+    height: 100%;
+    /*border: 1px solid #cc3333;
+    background-color: #33cccc;*/
+    width: 2px;
+    top: 53px;
+    position: relative;
+}
+.ballparkGraph div{
+    width: 100%;
+}
+.ballparkGraph div:nth-of-type(odd) {
+    background-color:#c33;
+}
+        
+.ballparkGraph div:nth-of-type(even) {
+    background-color:#3cc;
+}
