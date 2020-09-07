@@ -34,10 +34,11 @@ canvas {
 .ballparkGraph{
     float: left;
     height: 100%;
-    /*border: 1px solid #cc3333;
-    background-color: #33cccc;*/
-    width: 2px;
-    top: 53px;
+    width: 12px;
+    font-size: x-small;
+    text-align: center;
+    /*top: 53px;*/
+    z-index: 5;
     position: relative;
 }
 .ballparkGraph div{
@@ -45,6 +46,7 @@ canvas {
 }
 .ballparkGraph div:nth-of-type(odd) {
     background-color:#c33;
+    color: white;
 }
         
 .ballparkGraph div:nth-of-type(even) {
