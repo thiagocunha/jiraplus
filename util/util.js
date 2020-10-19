@@ -48,6 +48,7 @@ function cloneDate(original){
     }
 }
 
+
 function GetDate(str)
 {
     console.log('GetDate');

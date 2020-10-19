@@ -278,7 +278,7 @@ function insertBurnDownDOM(){
                     });
                     
                     getSubWorkingHours(workLogURL, subIds, 0, workLogs, function (finalWorkLogs){
-                        console.log(workLogs);
+                        //console.log(workLogs);
                         
                         // do we have any work logged?
                         if (finalWorkLogs && finalWorkLogs.length>0){
@@ -388,6 +388,7 @@ function insertBurnDownDOM(){
     }
 }
 
+
 function optimizeUI(){    
 
     if ($('#ballparkGraph').length == 0){
@@ -416,19 +417,30 @@ function optimizeUI(){
     
     $('.jira-issue-status-lozenge').text(function(i, text) {
         return text.replace(/ready for development/gi, 'Ready to code');
-    });
+    });    
 
-    updateTicket($('.ghx-swimlane-header[data-swimlane-id=1]'), 1);
+    checkNextItem(0);
 }
 
-function updateTicket(ticketElement, index){
+function updateTicket(ticketElement, missingRemainingCount){
+    if (!missingRemainingCount){
+        missingRemainingCount = 0;
+    }
     var issue = $(ticketElement).attr('data-issue-id');
+    if (missingRemainingCount>=10){
+        $(ticketElement).attr('data-limit-reached', '1')
+
+    }
+
+    var index = $(ticketElement).attr('swimlane-id');
 
     //console.log("Ticket id: " + issue);
     //console.log("Key: "+ $(ticketElement).attr('data-issue-key'));
-    
-    if (issue && $(ticketElement).children('.updatedTicket').length==0){
+    //console.log("missingRemainingCount: "+ missingRemainingCount);
+
+    if (issue){ //
         //console.log('Not updated yet');
+        //$(ticketElement).addClass('updatedTicket');
         $(ticketElement).children('div').addClass('updatedTicket');
 
         $.ajax({
@@ -441,6 +453,7 @@ function updateTicket(ticketElement, index){
             var labels = data.fields.labels;
             var detailText = '';
             
+            var index = $('div[data-issue-id='+data.id+']').attr('data-swimlane-id');
             $('div[data-issue-id='+data.id+'] span.ghx-summary').text(function(i, text) {
                 var newText = $('div[data-issue-id="'+data.id+'"]').children('div').attr('title').replace(/\d+ sub-tasks?.?-?.?/gi, '');
                 if (newText.length > 80){
@@ -466,6 +479,7 @@ function updateTicket(ticketElement, index){
                 $(ticketElement).children('div').append('<span class="updatedItem">&nbsp;<img height=16 width=16 src="'+data.fields.assignee.avatarUrls['16x16']+'"></span>');
             }
             if (data.fields.aggregatetimeestimate && data.fields.aggregatetimeestimate>0){
+
                 var estimateColor = "orange";
                 taskTime = data.fields.aggregatetimeestimate/60/60;
                 //currentEstimate.addHours(taskTime);
@@ -476,7 +490,13 @@ function updateTicket(ticketElement, index){
                 else if (data.fields.subtasks && data.fields.subtasks.length === 2){
                     estimateColor = "gray";
                 }
-                $(ticketElement).children('div').append('&nbsp;<img width=16 alt="" src="'+ imgsSourcePlus.ttIcon+'"/><span class="storyEstimate" data-issue="'+issue+'" data-estimate="'+taskTime.toFixed(1)+'" style="color: ' + estimateColor + '">&nbsp;~' + (taskTime).toFixed(1) + 'h</span>');
+                if (data.fields.timeoriginalestimate && data.fields.timeoriginalestimate != "" && data.fields.timeoriginalestimate != "0" && data.fields.timeoriginalestimate != data.fields.aggregatetimeestimate)
+                {
+                    estimateColor = "red";
+                }
+                $(ticketElement).children('div').append('&nbsp;<img width=16 alt="" src="'+ imgsSourcePlus.ttIcon+'"/><span class="storyEstimate" data-issue="'+issue+'"  style="color: ' + estimateColor + '">&nbsp;~' + (taskTime).toFixed(1) + 'h</span>');
+
+                currentEstimate2.setEstimate(index, taskTime);
             }
             else{
                 // Story estimate based on the sub-imp tasks estimates
@@ -506,9 +526,10 @@ function updateTicket(ticketElement, index){
                 //setTimeout(function(){checkTestingActivities(data.fields)},10);
             }
 
-            if ((!data.fields.aggregatetimeestimate || data.fields.aggregatetimeestimate == 0) && !(data.fields.issuetype.name == "Incident" || data.fields.issuetype.name == "Bug")){
-                        
+            if ((!data.fields.aggregatetimeestimate || data.fields.aggregatetimeestimate == 0) && !(data.fields.issuetype.name == "Incident" || data.fields.issuetype.name == "Bug" || data.fields.issuetype.name == "Value Activation")){
+                       
                 $(ticketElement).children('div').append('<span style="color: red">&nbsp;<img width="16" src="'+imgsSourcePlus.ttIcon+'"/>Missing remaining</span>');
+                missingRemainingCount += 1;
             }
 
             if (data.fields.duedate){
@@ -517,49 +538,106 @@ function updateTicket(ticketElement, index){
             }
             
             currentEstimate.addHours(taskTime);
-            // async flow
-            checkNextItem(index);
+
+            // sync flow
+            checkNextItem(missingRemainingCount);
         });
     }
     else{
+        console.log('nope');
         // Get estimate from attribute aqui:
-        currentEstimate.addHours($('.storyEstimate[data-issue='+issue+']').attr('data-estimate'));
+        //currentEstimate.addHours($('.storyEstimate[data-issue='+issue+']').attr('data-estimate'));
         
         // sync flow
-        checkNextItem(index);
+        checkNextItem(missingRemainingCount);
+        
     }
 }
 
+var currentEstimate2 = {
+    arrEstimates: [],
+    totalEstimate: 0,
+    setEstimate: function (index, value){
+        index = parseInt(index);
+        //console.log("arr: ");
+        //console.log(this.arrEstimates);
+        if (this.arrEstimates.length == 0){
+            this.arrEstimates = new Array(parseInt($('[swimlane-id]').last().attr('swimlane-id')));
+        }
+
+        if (this.arrEstimates[index]){
+            this.totalEstimate -= this.arrEstimates[index];
+        }
+        this.arrEstimates[index] = value;
+        this.totalEstimate += value;
+    },
+    updateWeeks: function(){
+
+        $('#ballparkGraph').empty();
+        var weeklyBurnHours = 50;
+        var currentHours = 0;
+        var currentWeeks = 0;
+        var currentTasks = 0;
+        var weekHours = 0;
+
+        console.log('total:' + this.totalEstimate);
+
+        for(i=1;i<this.arrEstimates.length;i++ ){
+            currentTasks +=1;
+            if (this.arrEstimates[i]){
+                currentHours += this.arrEstimates[i];
+                weekHours += this.arrEstimates[i];
+                var weeks = parseInt(currentHours / weeklyBurnHours);
+                //console.log('week:' + weeks + ' currentWeek'+ currentWeeks);
+                if (weeks > currentWeeks){
+
+                    $('#ballparkGraph').append('<div style="height: '+ parseInt((currentTasks+1) * 25.4) +'px" title="Week '+(currentWeeks + 1)+' (from today) burning ' + (weekHours.toFixed(1)) + ' ballpark points this week in '+ currentTasks +' tasks">'+(currentWeeks+1)+'</div>');
+
+                    currentTasks = 0;
+                    currentWeeks += 1;
+                    weekHours = 0;
+                }       
+            }     
+        }
+        
+
+    }
+};
+
+
 function checkEstimates(force){
-    var weeklyBurnHours = 55;
+    var weeklyBurnHours = 50;
     var weeks = parseInt(currentEstimate.hours / weeklyBurnHours);
 
-    console.log(currentEstimate);
+    //console.log(currentEstimate);
     if (force || weeks > currentEstimate.weeks){
         $('#ballparkGraph').append('<div style="height: '+ parseInt(currentEstimate.tasks * 25.4) +'px" title="Week '+(currentEstimate.weeks + 1)+' (from today) burning ' + (currentEstimate.hoursThisWeek.toFixed(1)) + ' ballpark points this week in '+ currentEstimate.tasks +' tasks">'+(currentEstimate.weeks+1)+'</div>');
         currentEstimate.nextWeek();
     }
 }
 
-function checkNextItem(index){
-    checkEstimates();
+function checkNextItem(missingRemainingCount){
 
-    index = index + 1;
-    var elements = $('.ghx-swimlane-header[data-swimlane-id='+(index)+']');
-    if (elements.length == 1){
-        statusPlus = 1;
-        // recursive call for each list item
-        setTimeout(function(){updateTicket(elements[0], index);}, 10);
-    }
-    else if (statusPlus == 0){ // If it hasn't started yet
-        // try to start again after 1 seconds if the list wasn't ready
-        setTimeout(optimizeUI, 2000);
-    }
-    else{
+    var elements = $('.ghx-swimlane-header[data-swimlane-id]:not(:has("div.updatedTicket"))').first();
+
+    var index = parseInt($(elements).attr("data-swimlane-id"));
+    console.log("index: "+index);
+    // more tasks unestimated than expected, so stop the process, at least if we're not in the middle of the list (updating an item)
+    if ($('[data-limit-reached]').length>0 && $("[data-swimlane-id='"+(index+1)+"']:has('.updatedTicket')").length == 0 ){
         statusPlus = 2;
         console.log('Finished checking list');
-        checkEstimates(true);
-        currentEstimate.initialize();
+        //checkEstimates(true);
+        currentEstimate2.updateWeeks();
+    }
+    else if (elements.length == 1){
+        statusPlus = 1;
+        // recursive call for each list item
+        setTimeout(function(){updateTicket(elements, missingRemainingCount);}, 10);
+    }
+    else{ // If it hasn't started yet
+        // try to start again after 1 seconds if the list wasn't ready
+        console.log('waiting');
+        setTimeout(optimizeUI, 2000);
     }
     
     
@@ -581,6 +659,7 @@ function monitorNetwork(){
 
 $(document).ready(function(){
     insertBurnDownDOM();
+    console.log('waitinng');
     setTimeout(optimizeUI, 1000);
     setTimeout(monitorNetwork, 3300);
 });
