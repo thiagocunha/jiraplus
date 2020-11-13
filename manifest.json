@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Jira plus",
   "description": "This extension will add some improvements to our Jira boards.",
-  "version": "5",
+  "version": "11",
   "browser_action": {
     "default_title": "JiraPlus",
     "default_icon": "img/jira128.png"
@@ -26,7 +26,8 @@
      "tabs",
     "activeTab",
     "webRequest",
-    "*://*.cit.com.br/"
+    "*://*.cit.com.br/",
+    "webRequestBlocking"
   ],
    "web_accessible_resources": [
     "content.css"

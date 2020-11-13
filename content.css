@@ -26,6 +26,9 @@ canvas {
     background-image: '../img/calendar.svg';
 
 }
+.ghx-swimlane{
+    height: 27px;
+}
 
 .ghx-heading{
     margin-top: 2px !important;
