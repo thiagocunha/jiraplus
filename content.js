@@ -1,3 +1,25 @@
+var lastURL = "";
+Date.prototype.addDays = function(days) {
+    var date = new Date(this.valueOf());
+    date.setDate(date.getDate() + days);
+    return date;
+}
+Date.prototype.toShortFormat = function() {
+
+    let monthNames =["Jan","Feb","Mar","Apr",
+                      "May","Jun","Jul","Aug",
+                      "Sep", "Oct","Nov","Dec"];
+    
+    let day = this.getDate();
+    
+    let monthIndex = this.getMonth();
+    let monthName = monthNames[monthIndex];
+    
+    let year = this.getFullYear();
+    
+    return `${day}-${monthName}-${year}`;  
+}
+
 /**
  * Create the configuration data structure needed to 
  * instantiate a new Chart/Graph
@@ -460,7 +482,8 @@ function updateTicket(ticketElement, missingRemainingCount){
         //currentEstimate.addHours($('.storyEstimate[data-issue='+issue+']').attr('data-estimate'));
         
         // sync flow
-        checkNextItem(missingRemainingCount);
+        //checkNextItem(missingRemainingCount);
+        currentEstimate2.updateWeeks();
         
     }
 }
@@ -526,7 +549,7 @@ function processTicket( data, missingRemainingCount ) {
     // Status <> backlog
     if (data.fields.status.id != 10354){                
 
-        if (data.fields.status.id == 11656 || data.fields.status.id == 10027 ){
+        if (data.fields.status.id == 11656 || data.fields.status.id == 10027 || data.fields.status.id == 11657){
             var dateDone = findDateDone(data);
             if (dateDone){
                 var dwell = Math.floor((new Date() - new Date(dateDone)) / (1000 * 60 * 60 * 24));
@@ -572,12 +595,11 @@ function processTicket( data, missingRemainingCount ) {
 
 function findDateDone(data){
     for (i=data.changelog.histories.length-1;i>0;i--){
-        if (data.changelog.histories[i].items[0].toString == "Developed" ||
-        (data.changelog.histories[i].items.length>1 && data.changelog.histories[i].items[1].toString == "Developed")){
-            return (data.changelog.histories[i].created);
-
-            break;
-        }
+        for (j=0;j<data.changelog.histories[i].items.length;j++){
+            if (data.changelog.histories[i].items[j].toString == "Developed"){
+                return (data.changelog.histories[i].created);
+            }
+        }        
     }
 }
 
@@ -601,7 +623,7 @@ var currentEstimate2 = {
     updateWeeks: function(){
 
         $('#ballparkGraph').empty();
-        var weeklyBurnHours = 42;
+        var weeklyBurnHours = 40;
         var currentHours = 0;
         var currentWeeks = 0;
         var currentTasks = 0;
@@ -616,8 +638,17 @@ var currentEstimate2 = {
                 weekHours += this.arrEstimates[i];
                 var weeks = parseInt(currentHours / weeklyBurnHours);
                 if (weeks > currentWeeks){
-
-                    $('#ballparkGraph').append('<div style="height: '+ parseInt((currentTasks) * 27) +'px" title="Week '+(currentWeeks + 2)+' (from today) burning ' + (weekHours.toFixed(1)) + ' ballpark points this week in '+ currentTasks +' tasks">'+(currentWeeks+2)+'</div>');
+                    var weekText = (currentWeeks+2);
+                    var weekDate = "";
+                    var today = (new Date());
+                    if (weekText == 2){
+                        weekText = "1 + 2";
+                        weekDate = today.toShortFormat();
+                    }
+                    else{
+                        weekDate = today.addDays(parseInt(weekText)*7).toShortFormat();
+                    }
+                    $('#ballparkGraph').append('<div style="height: '+ parseInt((currentTasks) * 27) +'px" title="Week '+weekText+' (from today) burning (Starting on '+weekDate+') ' + (weekHours.toFixed(1)) + ' ballpark points this week in '+ currentTasks +' tasks">'+weekText+'</div>');
 
                     currentTasks = 0;
                     currentWeeks += 1;
@@ -648,6 +679,10 @@ function checkNextItem(missingRemainingCount){
         statusPlus = 1;
         // recursive call for each list item
         setTimeout(function(){updateTicket(elements, missingRemainingCount);}, 10);
+
+        if (!(index % 13)){
+            currentEstimate2.updateWeeks();
+        }
     }
     else{ // If it hasn't started yet
         // try to start again after 1 seconds if the list wasn't ready

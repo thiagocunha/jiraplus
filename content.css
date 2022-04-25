@@ -27,7 +27,7 @@ canvas {
 
 }
 .ghx-swimlane{
-    height: 27px;
+    min-height: 27px;
 }
 
 .ghx-heading{

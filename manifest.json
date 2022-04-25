@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Jira plus",
   "description": "This extension will add some improvements to our Jira boards.",
-  "version": "11",
+  "version": "21",
   "browser_action": {
     "default_title": "JiraPlus",
     "default_icon": "img/jira128.png"
